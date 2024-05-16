@@ -134,3 +134,25 @@ const handleEvents = () => {
 
 // Initialize Event Handlers
 handleEvents();
+
+//Renders <option> elements into a specified container.
+const renderOptions = (data, container, defaultText) => {
+  const fragment = document.createDocumentFragment();
+  fragment.appendChild(createOptionElement("any", defaultText));
+
+  for (const [id, name] of Object.entries(data)) {
+    fragment.appendChild(createOptionElement(id, name));
+  }
+
+  container.appendChild(fragment);
+};
+
+//Renders book preview elements into a specified container.
+const renderBooks = (booksToRender, container) => {
+  const fragment = document.createDocumentFragment();
+  booksToRender.forEach((book) =>
+    fragment.appendChild(createBookElement(book))
+  );
+  container.innerHTML = "";
+  container.appendChild(fragment);
+};
