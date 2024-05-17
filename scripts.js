@@ -156,3 +156,25 @@ const renderBooks = (booksToRender, container) => {
   container.innerHTML = "";
   container.appendChild(fragment);
 };
+
+const updateShowMoreButton = () => {
+  const remaining = dataStore.matches.length - dataStore.page * BOOKS_PER_PAGE;
+  selectors.listButton.innerHTML = `
+      <span>Show more</span>
+      <span class="list__remaining"> (${remaining > 0 ? remaining : 0})</span>
+    `;
+  selectors.listButton.disabled = remaining <= 0;
+};
+
+const filterBooks = (filters) => {
+  return dataStore.books.filter((book) => {
+    const genreMatch =
+      filters.genre === "any" || book.genres.includes(filters.genre);
+    const titleMatch =
+      !filters.title ||
+      book.title.toLowerCase().includes(filters.title.toLowerCase());
+    const authorMatch =
+      filters.author === "any" || book.author === filters.author;
+    return genreMatch && titleMatch && authorMatch;
+  });
+};
