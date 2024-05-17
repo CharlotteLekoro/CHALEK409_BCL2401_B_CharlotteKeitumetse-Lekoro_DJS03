@@ -1,6 +1,6 @@
 import { books, authors, genres, BOOKS_PER_PAGE } from "./data.js";
 
-// Data Store, central place to store all main parts of data
+// Data Store
 const dataStore = {
   books,
   authors,
@@ -9,7 +9,7 @@ const dataStore = {
   page: 1,
 };
 
-// Central location with the DOM elements of all query selectors to avoid repeated querySelector calls
+// Query Selectors
 const selectors = {
   listItems: document.querySelector("[data-list-items]"),
   searchGenres: document.querySelector("[data-search-genres]"),
@@ -27,6 +27,7 @@ const selectors = {
   listSubtitle: document.querySelector("[data-list-subtitle]"),
   listDescription: document.querySelector("[data-list-description]"),
 };
+
 // Utility Functions
 const createOptionElement = (value, text) => {
   const element = document.createElement("option");
@@ -41,19 +42,102 @@ const createBookElement = ({ author, id, image, title }) => {
   element.setAttribute("data-preview", id);
 
   element.innerHTML = `
-      <img class="preview__image" src="${image}" />
-      <div class="preview__info">
-        <h3 class="preview__title">${title}</h3>
-        <div class="preview__author">${dataStore.authors[author]}</div>
-      </div>
-    `;
+    <img class="preview__image" src="${image}" />
+    <div class="preview__info">
+      <h3 class="preview__title">${title}</h3>
+      <div class="preview__author">${dataStore.authors[author]}</div>
+    </div>
+  `;
   return element;
 };
 
-// Event Handlers for all event listeners
+const renderOptions = (data, container, defaultText) => {
+  const fragment = document.createDocumentFragment();
+  fragment.appendChild(createOptionElement("any", defaultText));
+
+  for (const [id, name] of Object.entries(data)) {
+    fragment.appendChild(createOptionElement(id, name));
+  }
+
+  container.appendChild(fragment);
+};
+
+const renderBooks = (booksToRender, container) => {
+  const fragment = document.createDocumentFragment();
+  booksToRender.forEach((book) =>
+    fragment.appendChild(createBookElement(book))
+  );
+  container.innerHTML = "";
+  container.appendChild(fragment);
+};
+
+const updateShowMoreButton = () => {
+  const remaining = dataStore.matches.length - dataStore.page * BOOKS_PER_PAGE;
+  selectors.listButton.innerHTML = `
+    <span>Show more</span>
+    <span class="list__remaining"> (${remaining > 0 ? remaining : 0})</span>
+  `;
+  selectors.listButton.disabled = remaining <= 0;
+};
+
+const setTheme = (theme) => {
+  if (theme === "night") {
+    document.documentElement.style.setProperty("--color-dark", "255, 255, 255");
+    document.documentElement.style.setProperty("--color-light", "10, 10, 20");
+  } else {
+    document.documentElement.style.setProperty("--color-dark", "10, 10, 20");
+    document.documentElement.style.setProperty(
+      "--color-light",
+      "255, 255, 255"
+    );
+  }
+};
+
+const filterBooks = (filters) => {
+  return dataStore.books.filter((book) => {
+    const genreMatch =
+      filters.genre === "any" || book.genres.includes(filters.genre);
+    const titleMatch =
+      !filters.title ||
+      book.title.toLowerCase().includes(filters.title.toLowerCase());
+    const authorMatch =
+      filters.author === "any" || book.author === filters.author;
+    return genreMatch && titleMatch && authorMatch;
+  });
+};
+
+const showBookDetails = (book) => {
+  selectors.listActive.open = true;
+  selectors.listBlur.src = book.image;
+  selectors.listImage.src = book.image;
+  selectors.listTitle.innerText = book.title;
+  selectors.listSubtitle.innerText = `${
+    dataStore.authors[book.author]
+  } (${new Date(book.published).getFullYear()})`;
+  selectors.listDescription.innerText = book.description;
+};
+
+// Initial Render
+document.addEventListener("DOMContentLoaded", () => {
+  renderBooks(dataStore.matches.slice(0, BOOKS_PER_PAGE), selectors.listItems);
+  renderOptions(dataStore.genres, selectors.searchGenres, "All Genres");
+  renderOptions(dataStore.authors, selectors.searchAuthors, "All Authors");
+
+  const theme =
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "night"
+      : "day";
+  selectors.settingsTheme.value = theme;
+  setTheme(theme);
+
+  updateShowMoreButton();
+});
+
+// Event Handlers
 const handleEvents = () => {
   selectors.searchGenres.addEventListener("click", () => {
-    selectors.searchOverlay.open = false;
+    selectors.searchOverlay.open = true;
   });
 
   document
@@ -134,59 +218,3 @@ const handleEvents = () => {
 
 // Initialize Event Handlers
 handleEvents();
-
-//Renders <option> elements into a specified container.
-const renderOptions = (data, container, defaultText) => {
-  const fragment = document.createDocumentFragment();
-  fragment.appendChild(createOptionElement("any", defaultText));
-
-  for (const [id, name] of Object.entries(data)) {
-    fragment.appendChild(createOptionElement(id, name));
-  }
-
-  container.appendChild(fragment);
-};
-
-//Renders book preview elements into a specified container.
-const renderBooks = (booksToRender, container) => {
-  const fragment = document.createDocumentFragment();
-  booksToRender.forEach((book) =>
-    fragment.appendChild(createBookElement(book))
-  );
-  container.innerHTML = "";
-  container.appendChild(fragment);
-};
-
-const updateShowMoreButton = () => {
-  const remaining = dataStore.matches.length - dataStore.page * BOOKS_PER_PAGE;
-  selectors.listButton.innerHTML = `
-      <span>Show more</span>
-      <span class="list__remaining"> (${remaining > 0 ? remaining : 0})</span>
-    `;
-  selectors.listButton.disabled = remaining <= 0;
-};
-
-const filterBooks = (filters) => {
-  return dataStore.books.filter((book) => {
-    const genreMatch =
-      filters.genre === "any" || book.genres.includes(filters.genre);
-    const titleMatch =
-      !filters.title ||
-      book.title.toLowerCase().includes(filters.title.toLowerCase());
-    const authorMatch =
-      filters.author === "any" || book.author === filters.author;
-    return genreMatch && titleMatch && authorMatch;
-  });
-};
-
-const setTheme = (theme) => {
-  const isNight = theme === "night";
-  document.documentElement.style.setProperty(
-    "--color-dark",
-    isNight ? "255, 255, 255" : "10, 10, 20"
-  );
-  document.documentElement.style.setProperty(
-    "--color-light",
-    isNight ? "10, 10, 20" : "255, 255, 255"
-  );
-};
