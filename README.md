@@ -1,4 +1,5 @@
 Rationale Behind Refactoring Decisions
+
 Data Store Object: I made the data storeobject to store the book, author, genre data, variables into a single object to make it easier at manage in one place
 
 Query Selectors Object: Collected all DOM element references into the selectors object. I did this to try and eliminate the chance of repetition of the code and functions.
