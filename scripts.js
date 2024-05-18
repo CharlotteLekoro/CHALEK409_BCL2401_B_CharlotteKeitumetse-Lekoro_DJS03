@@ -42,12 +42,12 @@ const createBookElement = ({ author, id, image, title }) => {
   element.setAttribute("data-preview", id);
 
   element.innerHTML = `
-    <img class="preview__image" src="${image}" />
-    <div class="preview__info">
-      <h3 class="preview__title">${title}</h3>
-      <div class="preview__author">${dataStore.authors[author]}</div>
-    </div>
-  `;
+        <img class="preview__image" src="${image}" />
+        <div class="preview__info">
+          <h3 class="preview__title">${title}</h3>
+          <div class="preview__author">${dataStore.authors[author]}</div>
+        </div>
+      `;
   return element;
 };
 
@@ -74,9 +74,9 @@ const renderBooks = (booksToRender, container) => {
 const updateShowMoreButton = () => {
   const remaining = dataStore.matches.length - dataStore.page * BOOKS_PER_PAGE;
   selectors.listButton.innerHTML = `
-    <span>Show more</span>
-    <span class="list__remaining"> (${remaining > 0 ? remaining : 0})</span>
-  `;
+        <span>Show more</span>
+        <span class="list__remaining"> (${remaining > 0 ? remaining : 0})</span>
+      `;
   selectors.listButton.disabled = remaining <= 0;
 };
 
@@ -215,6 +215,69 @@ const handleEvents = () => {
       selectors.settingsOverlay.open = false;
     });
 };
+
+// Initialize Event Handlers
+handleEvents();
+
+selectors.listButton.addEventListener("click", () => {
+  const start = dataStore.page * BOOKS_PER_PAGE;
+  const end = (dataStore.page + 1) * BOOKS_PER_PAGE;
+  renderBooks(dataStore.matches.slice(start, end), selectors.listItems);
+  dataStore.page += 1;
+  updateShowMoreButton();
+});
+
+selectors.listItems.addEventListener("click", (event) => {
+  const pathArray = Array.from(event.composedPath());
+  const activePreview = pathArray.find((node) => node?.dataset?.preview);
+  if (activePreview) {
+    const book = dataStore.books.find(
+      (book) => book.id === activePreview.dataset.preview
+    );
+    if (book) {
+      showBookDetails(book);
+    }
+  }
+});
+
+selectors.listActive.addEventListener("click", () => {
+  selectors.listActive.open = false;
+});
+
+document
+  .querySelector("[data-settings-form]")
+  .addEventListener("submit", (event) => {
+    event.preventDefault();
+    const { theme } = Object.fromEntries(new FormData(event.target));
+    setTheme(theme);
+    selectors.settingsOverlay.open = false;
+  });
+
+document
+  .querySelector("[data-search-form]")
+  .addEventListener("submit", (event) => {
+    event.preventDefault();
+    const filters = Object.fromEntries(new FormData(event.target));
+    dataStore.matches = filterBooks(filters);
+    dataStore.page = 1;
+    renderBooks(
+      dataStore.matches.slice(0, BOOKS_PER_PAGE),
+      selectors.listItems
+    );
+    updateShowMoreButton();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    selectors.searchOverlay.open = false;
+  });
+
+document.querySelector("[data-search-cancel]").addEventListener("click", () => {
+  selectors.searchOverlay.open = false;
+});
+
+document
+  .querySelector("[data-settings-cancel]")
+  .addEventListener("click", () => {
+    selectors.settingsOverlay.open = false;
+  });
 
 // Initialize Event Handlers
 handleEvents();
